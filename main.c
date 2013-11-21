@@ -70,6 +70,7 @@ char mip[IP_LEN], iip[IP_LEN];
 int csock, dsock, srv_num;
 char ip[IP_LEN];
 char ifname[IP_LEN];
+uid_t	uid;
 struct keytab {
     const char  *kt_cp;
     int kt_i;
@@ -116,9 +117,13 @@ int main(int argc, char **argv)
 
 	//get_if_addr(ifname, ip);
 	// Create control socket node 
+	uid = getuid();
+	if (uid != 0) {
+		errx(EX_NOPERM, "must be root to alter mcastrouting table");	
+	}
 	if (NgMkSockNode(name, &csock, &dsock) < 0)
 	{
-		fprintf(stderr, "main(): Creation of Ngsocket Failed: %s",
+		fprintf(stderr, "main(): Creation of Ngsocket Failed: %s\n",
 				strerror(errno));
 		exit(EXIT_FAILURE);
 	}
