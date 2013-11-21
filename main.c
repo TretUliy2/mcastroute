@@ -140,9 +140,6 @@ int main(int argc, char **argv)
 	close(csock);
 	close(dsock);
 
-
-
-
 }
 // Function make ip address in form char *s[] = "239.0.0.1"
 void get_if_addr(const char *ifname, char ip[IP_LEN]) {
@@ -310,6 +307,8 @@ int add_route(int argc, char **argv) {
                 , strerror(errno));
         return(0);
     }
+	// Shutdown the node to prevent conflicts
+	shut_node(up_name);
 	// name  ksocket_node upstream
     sprintf(path, "%s", "temp_tee:left");
     sprintf(name, "%s", up_name);
@@ -561,12 +560,19 @@ void signal_handler(int sig)
 // Shutdown Single node
 void shut_node(char path[NG_PATHSIZ])
 {
+	if (path[strlen(path) - 1] != ':') {
+		sprintf(path, "%s:", path);
+	}
 	//NgSetDebug(4);
 	if (NgSendMsg(csock, path, NGM_GENERIC_COOKIE, NGM_SHUTDOWN, NULL, 0) < 0)
 	{
-		fprintf(stderr, "shut_node(): Error shutdowning %s: %s\n", 
-			path, strerror(errno));
-		//return void;	
+		if (errno == ENOENT) {
+			
+		} else {
+			fprintf(stderr, "shut_node(): Error shutdowning %s: %s\n", 
+				path, strerror(errno));
+			//return void;	
+		}
 	}
 	else
 	{
