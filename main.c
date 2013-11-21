@@ -249,6 +249,9 @@ int add_route(int argc, char **argv) {
 	sprintf(name, "mcastroute%d", getpid());
 	
 	get_if_addr(ifname, mip);	
+	// Shutdown the node to prevent conflicts
+	shut_node(up_name);
+	shut_node(down_name);
 	/* Create two ksocket nodes for restream purposes
 	*  make them konnected via via tee
 	*/
@@ -307,8 +310,6 @@ int add_route(int argc, char **argv) {
                 , strerror(errno));
         return(0);
     }
-	// Shutdown the node to prevent conflicts
-	shut_node(up_name);
 	// name  ksocket_node upstream
     sprintf(path, "%s", "temp_tee:left");
     sprintf(name, "%s", up_name);
@@ -430,7 +431,6 @@ int add_route(int argc, char **argv) {
 	//sprintf(mip, "%s", "192.168.200.10");
 	get_if_addr(ifname, mip);	
 	sprintf(iip, "%s", up_ip);
-	fprintf(stderr, "%s", mip);
 	
     memset(&sockopt_buf, 0, sizeof(sockopt_buf));
     memset(&ip_mreq, 0, sizeof(ip_mreq));
@@ -451,10 +451,12 @@ int add_route(int argc, char **argv) {
                  iip, mip);
         return EXIT_FAILURE;
     }
-    fprintf(stderr,
+    /*
+	fprintf(stderr,
             "main(): Register in mgroup = %s success interface = %s\n",
              iip, mip);
-    return EXIT_SUCCESS;
+    */
+	return EXIT_SUCCESS;
 }
 
 // Del route 
@@ -474,7 +476,7 @@ void del_route(int argc, char **argv) {
         }
         i++;
     }
-	sprintf(name, "%s:", name);
+	//sprintf(name, "%s:", name);
 	shut_node(name);
 	exit(EXIT_SUCCESS);
 }
@@ -560,23 +562,27 @@ void signal_handler(int sig)
 // Shutdown Single node
 void shut_node(char path[NG_PATHSIZ])
 {
-	if (path[strlen(path) - 1] != ':') {
-		sprintf(path, "%s:", path);
+	char name[NG_PATHSIZ];
+	int i = 0;
+	memset(name, 0, sizeof(name));
+	while (i < strlen(path)) {
+		name[i] = path[i];
+		i++;
+	}
+
+	if (name[strlen(name)-1] != ':') {
+		sprintf(name, "%s:", name);
 	}
 	//NgSetDebug(4);
-	if (NgSendMsg(csock, path, NGM_GENERIC_COOKIE, NGM_SHUTDOWN, NULL, 0) < 0)
+	if (NgSendMsg(csock, name, NGM_GENERIC_COOKIE, NGM_SHUTDOWN, NULL, 0) < 0)
 	{
 		if (errno == ENOENT) {
 			
 		} else {
 			fprintf(stderr, "shut_node(): Error shutdowning %s: %s\n", 
-				path, strerror(errno));
+				name, strerror(errno));
 			//return void;	
 		}
-	}
-	else
-	{
-		fprintf(stderr, "shut_node(): node %s shuted down\n", path);
 	}
 	//return void;
 }
