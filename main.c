@@ -1,6 +1,9 @@
-/*
- *  Netgraph alternative to open-source project udpxy
- *  and non free software known as "relaying"
+/* This program is for some kind of proxying 
+ * It takes three arguments 1. "interface" 2. "source" 3. "destination"
+ * Than it sends igmp join message to "source" via "interface" and received
+ * packets sent to "destination"
+ * 
+ * This is Stable Version
  */
 
 #include	<stdio.h>
