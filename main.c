@@ -365,9 +365,9 @@ int add_route(int argc, char **argv) {
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_BIND,
             (struct sockaddr*) &addr, sizeof(addr)) < 0)
     {
-        //NgAllocRecvMsg(csock, &m, pth);
-        fprintf(stderr, "main(): BIND FAILED %s\n",
-                strerror(errno));
+        fprintf(stderr, "%s: bind to %s:%d failed : %s\n",
+                __FUNCTION__, inet_ntoa(addr.sin_addr),
+                nhtos(addr.sin_port), strerror(errno));
         return 0;
 	}
 	// msg downstream connect inet/239.0.8.3:1234
@@ -379,9 +379,9 @@ int add_route(int argc, char **argv) {
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_CONNECT,
             (struct sockaddr*) &addr, sizeof(addr)) < 0)
     {
-        //NgAllocRecvMsg(csock, &m, pth);
-        fprintf(stderr, "main(): CONNECT FAILED %s\n",
-                strerror(errno));
+        fprintf(stderr, "%s: CONNECT to %s:%d FAILED %s\n",
+                __FUNCTION__, inet_ntoa(addr.sin_addr),
+                nhtos(addr.sin_port), strerror(errno));
         return 0;
     }
 
