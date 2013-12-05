@@ -367,7 +367,7 @@ int add_route(int argc, char **argv) {
     {
         fprintf(stderr, "%s: bind to %s:%d failed : %s\n",
                 __FUNCTION__, inet_ntoa(addr.sin_addr),
-                nhtos(addr.sin_port), strerror(errno));
+                addr.sin_port, strerror(errno));
         return 0;
 	}
 	// msg downstream connect inet/239.0.8.3:1234
@@ -381,7 +381,7 @@ int add_route(int argc, char **argv) {
     {
         fprintf(stderr, "%s: CONNECT to %s:%d FAILED %s\n",
                 __FUNCTION__, inet_ntoa(addr.sin_addr),
-                nhtos(addr.sin_port), strerror(errno));
+                addr.sin_port, strerror(errno));
         return 0;
     }
 

@@ -1,5 +1,6 @@
-all:
-	clang -ggdb -c main.c
-	clang -lc -lnetgraph -o mcastroute main.o
-clean:
-	rm -rf mcastroute main.o
+PROG= mcastroute
+SRCS= main.c
+LDADD= -lc -lnetgraph
+WARN?= 3
+MAN=
+.include <bsd.prog.mk>
