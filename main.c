@@ -150,7 +150,7 @@ int main(int argc, char **argv)
 
 }
 // Function make ip address in form char *s[] = "239.0.0.1"
-void get_if_addr(const char *ifname, char ip[IP_LEN]) {
+int get_if_addr(const char *ifname, char ip[IP_LEN]) {
 	int fd;
 	struct ifreq ifr;
 	char value[IP_LEN];
@@ -158,19 +158,29 @@ void get_if_addr(const char *ifname, char ip[IP_LEN]) {
 	memset(value, 0, sizeof(value));
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 
+	if (fd == -1)
+	{
+		fprintf(stderr, "%s: error opening ioctl socket: %s",
+				__FUNCTION__, strerror(errno));
+	}
 	/* I want to get an IPv4 IP address */
 	ifr.ifr_addr.sa_family = AF_INET;
 
 	/* I want IP address attached to "eth0" */
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
 
-	ioctl(fd, SIOCGIFADDR, &ifr);
+	if (ioctl(fd, SIOCGIFADDR, &ifr) == -1)
+	{
+		fprintf(stderr, "%s: An error has occured while trying get ip address of interface %s : %s",
+				__FUNCTION__, ifname, strerror(errno));
+		return (0);
+	}
 
 	close(fd);
 
 	/* display result */
 	sprintf(ip, "%s", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
-
+	return 1;
 }
 // Add route It`s not acctualy routing it just creates 
 // two ksocket nodes connect`s it and send igmp join to one of them 
