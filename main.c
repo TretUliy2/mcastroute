@@ -22,7 +22,6 @@
 #include	<netgraph/ng_socket.h>
 #include	<netgraph/ng_ksocket.h>
 #include	<netgraph/ng_hub.h>
-#include	<netinet/in.h>
 #include	<netdb.h>
 #include	<string.h>
 #include	<strings.h>
