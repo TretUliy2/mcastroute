@@ -612,6 +612,7 @@ void usage(const char *cp)
 	fprintf(stderr, "\
 mcastroute -i vlanXX (add|del) SRC_IP:PORT DST_IP\n\
 Example: mcastroute -i vlan9 add 239.125.10.3:1234 239.0.8.3\n\
+get traffic from vlan9 239.125.10.3:1234 and send it to 239.0.8.3\n\
 \t mcastroute del 239.0.8.3\n\
 interface will be used to send igmp join\n");
  
