@@ -65,6 +65,10 @@ void get_if_addr(const char* ifname, char ip[IP_LEN]);
 int keyword(const char *cp);
 int add_route(int argc, char **argv);
 void del_route(int argc, char **argv);
+int parse_src(const char *phrase);
+int parse_dst(const char *phrase);
+int get_if_addr(const char *ifname, struct sockaddr_in *ip);
+
 // External Functions
 
 // Global Variables
@@ -83,6 +87,16 @@ struct keytab {
     {"del", K_DEL},
     {0, 0}
 };
+// struct configuration
+struct cfg {
+	struct sockaddr_in src;
+	struct sockaddr_in dst;
+	struct in_addr srcifip;
+	struct sockaddr_in dstif;
+	char up_name[NG_NODESIZ];
+	char down_name[NG_NODESIZ];
+} cfg;
+
 // Main Program
 int main(int argc, char **argv)
 {
@@ -95,18 +109,7 @@ int main(int argc, char **argv)
 	if (argc < 2)
         usage(NULL);
 
-	while ((ch = getopt(argc, argv, "i:?")) != -1)
-        switch(ch) {
-        case 'i':
-            iflag = 1;
-			sprintf(ifname, "%s", optarg); 
-            break;
-        case '?':
-        default:
-            usage(argv[0]);
-        }
-    argc -= optind;
-    argv += optind;
+	bzero(&cfg, sizeof(cfg));
 
 
 	// Handling Ctrl + C and other signals
@@ -132,10 +135,6 @@ int main(int argc, char **argv)
 	if (*argv != NULL)
         switch (keyword(*argv)) {
 		case K_ADD:
-			if (iflag == 0) {
-				printf("-i key is nesessery when adding mroute\n");
-				usage(NULL);
-			}
 			add_route(argc, argv);
 			break;
 		case K_DEL:
@@ -148,38 +147,141 @@ int main(int argc, char **argv)
 	close(dsock);
 
 }
-// Function make ip address in form char *s[] = "239.0.0.1"
-int get_if_addr(const char *ifname, char ip[IP_LEN]) {
+
+int get_if_addr(const char *ifname, struct sockaddr_in *ip)
+{
 	int fd;
 	struct ifreq ifr;
-	char value[IP_LEN];
-	
-	memset(value, 0, sizeof(value));
-	fd = socket(AF_INET, SOCK_DGRAM, 0);
 
+	memset(ip, 0, sizeof(struct sockaddr_in));
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd == -1)
 	{
-		fprintf(stderr, "%s: error opening ioctl socket: %s",
+		fprintf(stderr, "%s: an error has occured while opening fd: %s",
 				__FUNCTION__, strerror(errno));
+		return(0);
 	}
 	/* I want to get an IPv4 IP address */
 	ifr.ifr_addr.sa_family = AF_INET;
 
 	/* I want IP address attached to "eth0" */
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
 
 	if (ioctl(fd, SIOCGIFADDR, &ifr) == -1)
 	{
-		fprintf(stderr, "%s: An error has occured while trying get ip address of interface %s : %s",
+		Log(LOG_ERR, "%s: An error has occured while trying get ip address of interface %s : %s",
 				__FUNCTION__, ifname, strerror(errno));
-		return (0);
+		return 0;
 	}
 
 	close(fd);
 
 	/* display result */
-	sprintf(ip, "%s", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+	memcpy(ip, &(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr), sizeof(struct sockaddr_in));
 	return 1;
+}
+
+// parse src section
+int parse_src(const char *phrase) {
+	char *p;
+	char string[82];
+	char buf[82];
+
+	memset(string, 0, sizeof(string));
+	memset(buf, 0, sizeof(buf));
+	strcpy(string, phrase);
+	strcpy(buf, phrase);
+
+
+	p = strsep((char **) &phrase, "@");
+	if (phrase != NULL )
+	{
+		if (!inet_aton(p, &cfg.srcifip))
+		{
+			if (!get_if_addr(p, (struct sockaddr_in *)&cfg.srcifip))
+			{
+				fprintf(stderr, "%s: error : %s is not either a valid ip address or interface name\n",
+						__FUNCTION__, p);
+				return(0);
+			}
+		}
+	}
+	else
+	{
+		phrase = string;
+	}
+	// parse ip
+	p = strsep((char **)&phrase, ":");
+	//fprintf(stderr, "%s: parsed src_ip = %s line = %s\n", __FUNCTION__, p, buf);
+	if (phrase == NULL)
+	{
+		fprintf(stderr, "%s: Port not specified for src",
+				__FUNCTION__);
+		return(0);
+	}
+
+	cfg.src.sin_family = AF_INET;
+
+	if (!inet_aton(p, &cfg.src.sin_addr))
+	{
+		fprintf(stderr, "%s: fatal error: %s is not a valid ip address\n",
+					__FUNCTION__, p);
+		return(0);
+	}
+
+	/*
+	fprintf(stderr, "%s: server_cfg[%d].src.sin_addr = %s\n", __FUNCTION__,
+			srv_count, inet_ntoa(server_cfg[srv_count].src.sin_addr));
+
+	*/
+	cfg.src.sin_port = htons(atoi(phrase));
+	cfg.src.sin_len = sizeof(struct sockaddr_in);
+	return(1);
+
+}
+
+// parse dst section of server`s line
+int parse_dst(const char *phrase)
+{
+	char *p;
+
+	char string[82];
+	char buf[82];
+
+	memset(string, 0, sizeof(string));
+	memset(buf, 0, sizeof(buf));
+	strcpy(string, phrase);
+	strcpy(buf, phrase);
+
+	p = strsep((char **) &phrase, "@");
+	if (phrase != NULL )
+	{
+		if (!inet_aton(p, &cfg.dstif))
+		{
+			if (!get_if_addr(p, (struct sockaddr_in *) &cfg.dstif))
+			{
+				fprintf(stderr,
+						"%s: error : %s is not either a valid ip address or interface name\n",
+						__FUNCTION__, p);
+				return (0);
+			}
+		}
+	}
+	else
+	{
+		phrase = string;
+	}
+	p = strsep((char **)&phrase, ":");
+	cfg.dst.sin_family = AF_INET;
+	if(!inet_aton(p, &cfg.dst.sin_addr))
+	{
+		fprintf(stderr, "%s: fatal error: %s is not a valid ip address\n",
+					__FUNCTION__, p);
+		return(0);
+	}
+	cfg.dst.sin_port = htons(atoi(phrase));
+	cfg.dst.sin_len = sizeof(struct sockaddr_in);
+	return(1);
 }
 // Add route It`s not acctualy routing it just creates 
 // two ksocket nodes connect`s it and send igmp join to one of them 
@@ -217,52 +319,19 @@ int add_route(int argc, char **argv) {
 	int i, j, portflag;
 	j = i = portflag = 0;
 	--argc;
-	while (i < strlen(argv[argc])) {
-		switch (argv[argc][i]) {
-		case '.':
-			down_name[i] = '-';
-			down_ip[i] = argv[argc][i];
-			break;
-		case ':':
-			portflag = 1;
-			break;
-		default:
-			if (portflag == 1) {
-				dst_port[j] = argv[argc][i];
-				j++;
-			} else {
-				down_name[i] = down_ip[i] = argv[argc][i];
-			}
-		}
-		i++;
-	}
+	parse_dst(argv[argc]);
 	--argc;
-	j = i = portflag = 0;
-	while (i < strlen(argv[argc])) {
-		switch (argv[argc][i]) {
-		case '.':
-			up_name[i] = '-';
-			up_ip[i] = argv[argc][i];
-			break;
-		case ':':
-			portflag = 1;
-			break;
-		default:
-			if (portflag == 1) {
-				src_port[j] = argv[argc][i];
-				j++;
-			} else {
-				up_name[i] = up_ip[i] = argv[argc][i];
-			}
-		}
-		i++;
-	}
+	parse_src(argv[argc]);
+
+	/*
 	if (strlen(src_port) == 0) {
 		sprintf(src_port, "%s", DEFAULT_PORT);
 	}
 	if (strlen(dst_port) == 0) {
 		sprintf(dst_port, "%s", DEFAULT_PORT);
 	}
+	*/
+
 	sprintf(name, "mcastroute%d", getpid());
 	
 	get_if_addr(ifname, mip);	
