@@ -497,8 +497,8 @@ int add_route(int argc, char **argv) {
 
 	// Set ttl of outgoing packets for downstream
     memset(&new_sockopt_buf, 0, sizeof(new_sockopt_buf));
-    opt->level = IPPROTO_IP;
-	opt->name = IP_MULTICAST_TTL;
+    opt->level = 0x0000;
+	opt->name = 0x000a;
 	ttl = 32;
 	memcpy(opt->value, &ttl, sizeof(int));
 
