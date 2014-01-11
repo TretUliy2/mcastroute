@@ -323,13 +323,20 @@ int add_route(int argc, char **argv) {
 	int one = 1, *ttl;
 	struct ngm_mkpeer mkp;
 	struct ngm_connect con;
+
 	union
 	{
 	    u_char buf[sizeof(struct ng_ksocket_sockopt) + sizeof(struct ip_mreq)];
 	    struct ng_ksocket_sockopt sockopt;
 	} sockopt_buf;
+	union
+	{
+		u_char buf[sizeof(struct ng_ksocket_sockopt) + sizeof(int)];
+		struct ng_ksocket_sockopt sockopt;
+	} new_sockopt_buf;
+
 	struct ng_ksocket_sockopt * const sockopt = &sockopt_buf.sockopt;
-	struct ng_ksocket_sockopt opt;
+	struct ng_ksocket_sockopt *const opt = &new_sockopt_buf.sockopt;
 
 	struct ip_mreq ip_mreq;
 	// Args is vlan9 239.125.10.3:1234 239.0.8.3
@@ -481,10 +488,10 @@ int add_route(int argc, char **argv) {
 		return 0;
 	}
 	// Set ttl of outgoing packets for downstream
-	opt.level = IPPROTO_IP;
-	opt.name = IP_MULTICAST_TTL;
+	opt->level = IPPROTO_IP;
+	opt->name = IP_MULTICAST_TTL;
 	*ttl = 32;
-	opt.value = ttl;
+	memcpy(opt->value, ttl, sizeof(int));
 
 	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, &opt,
 			sizeof(sockopt_buf)) == -1)
