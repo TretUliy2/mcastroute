@@ -280,6 +280,7 @@ int parse_dst(const char *phrase)
 			}
 
 			cfg.dstif.sin_port = htons(atoi(DEFAULT_PORT));
+			cfg.dstif.sin_len = sizeof(struct sockaddr_in);
 			printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
 					__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 		}
@@ -357,9 +358,10 @@ int add_route(int argc, char **argv) {
 	j = i = portflag = 0;
 	--argc;
 	parse_dst(argv[argc]);
+	printf("%s: cfg_addr = %p ", __FUNCTION__, &cfg);
 	--argc;
 	parse_src(argv[argc]);
-
+	printf("%s: cfg_addr = %p ", __FUNCTION__, &cfg);
 	printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
 			__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 	/*
