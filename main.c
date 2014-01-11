@@ -468,16 +468,6 @@ int add_route(int argc, char **argv) {
 	memset(&sockopt_buf, 0, sizeof(sockopt_buf));
 
 	sockopt->level = SOL_SOCKET;
-	sockopt->name = SO_REUSEADDR;
-	memcpy(sockopt->value, &one, sizeof(int));
-	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
-			sizeof(sockopt_buf)) == -1)
-	{
-		fprintf(stderr, "Sockopt SO_REUSEADDR set failed : %s",
-				strerror(errno));
-		return 0;
-	}
-
 	sockopt->name = SO_REUSEPORT;
 	memcpy(sockopt->value, &one, sizeof(int));
 	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
