@@ -67,6 +67,7 @@ void del_route(int argc, char **argv);
 int parse_src(const char *phrase);
 int parse_dst(const char *phrase);
 int get_if_addr(const char *ifname, struct sockaddr_in *ip);
+void dot_remove(char *p);
 
 // External Functions
 
@@ -233,7 +234,8 @@ int parse_src(const char *phrase) {
 					__FUNCTION__, p);
 		return(0);
 	}
-	
+	strcpy(cfg.up_name, p);
+	dot_remove(cfg.up_name);
 
 	/*
 	fprintf(stderr, "%s: server_cfg[%d].src.sin_addr = %s\n", __FUNCTION__,
@@ -286,9 +288,27 @@ int parse_dst(const char *phrase)
 					__FUNCTION__, p);
 		return(0);
 	}
+	strcpy(cfg.down_name, p);
+	dot_remove(cfg.down_name);
 	cfg.dst.sin_port = htons(atoi(phrase));
 	cfg.dst.sin_len = sizeof(struct sockaddr_in);
 	return(1);
+}
+
+void dot_remove (char *p)
+{
+	int i = 0;
+	char buf[NG_NODESIZ];
+	bzero(buf, sizeof(buf));
+
+	while (i < strlen(p))
+	{
+		if (p[i] == '.')
+			buf[i] = '-';
+		else
+			buf[i] = p[i];
+	}
+	strcpy(p, buf);
 }
 // Add route It`s not acctualy routing it just creates 
 // two ksocket nodes connect`s it and send igmp join to one of them 
@@ -406,7 +426,7 @@ int add_route(int argc, char **argv) {
     }
 	// name  ksocket_node upstream
     sprintf(path, "%s", "temp_tee:left");
-    sprintf(name, "%s", up_name);
+    sprintf(name, "%s", cfg.up_name);
     if (NgNameNode(csock, path, "%s", name) < 0)
     {
         fprintf(stderr, "main(): Naming Node %s failed: %s\n",
@@ -414,7 +434,7 @@ int add_route(int argc, char **argv) {
     }
 	// name  ksocket_node upstream
     sprintf(path, "%s", "temp_tee:right");
-    sprintf(name, "%s", down_name);
+    sprintf(name, "%s", cfg.down_name);
     if (NgNameNode(csock, path, "%s", name) < 0)
     {
         fprintf(stderr, "Naming Node %s failed: %s\n",
@@ -426,14 +446,11 @@ int add_route(int argc, char **argv) {
 	shut_node(path);
 	// Bind ksocket nodes to particular multicast addresses
 	// msg upstream: bind inet/239.125.10.3:1234
-	sprintf(path, "%s:", up_name);
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(atoi(src_port));
-	addr.sin_addr.s_addr = inet_addr(up_ip); 
-	addr.sin_len = sizeof(addr);
+	sprintf(path, "%s:", cfg.up_name);
+
 
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_BIND,
-            (struct sockaddr*) &addr, sizeof(addr)) < 0)
+            (struct sockaddr*) &cfg.src, sizeof(addr)) < 0)
     {
         //NgAllocRecvMsg(csock, &m, pth);
         fprintf(stderr, "main(): BIND FAILED %s\n",
@@ -442,14 +459,11 @@ int add_route(int argc, char **argv) {
     }
 	
 	// msg downstream: bind inet/192.168.166.10:1234
-	sprintf(path, "%s:", down_name);
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(atoi(dst_port));
-	addr.sin_addr.s_addr = inet_addr(mip); 
-	addr.sin_len = sizeof(addr);
+	sprintf(path, "%s:", cfg.down_name);
+
 
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_BIND,
-            (struct sockaddr*) &addr, sizeof(addr)) < 0)
+            (struct sockaddr*) &cfg.dstif, sizeof(addr)) < 0)
     {
         fprintf(stderr, "%s: bind to %s:%d failed : %s\n",
                 __FUNCTION__, inet_ntoa(addr.sin_addr),
@@ -457,13 +471,9 @@ int add_route(int argc, char **argv) {
         return 0;
 	}
 	// msg downstream connect inet/239.0.8.3:1234
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(atoi(dst_port));
-    addr.sin_addr.s_addr = inet_addr(down_ip);
-    addr.sin_len = sizeof(addr);
 
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_CONNECT,
-            (struct sockaddr*) &addr, sizeof(addr)) < 0)
+            (struct sockaddr*) &cfg.dst, sizeof(addr)) < 0)
     {
         fprintf(stderr, "%s: CONNECT to %s:%d FAILED %s\n",
                 __FUNCTION__, inet_ntoa(addr.sin_addr),
@@ -473,7 +483,7 @@ int add_route(int argc, char **argv) {
 
 	// UPSTREAM REUSEADDR REUSEPORT
     // setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) < 0)
-	sprintf(path, "%s:", up_name);
+	sprintf(path, "%s:", cfg.up_name);
     memset(&sockopt_buf, 0, sizeof(sockopt_buf));
 
     sockopt->level = SOL_SOCKET;
@@ -497,7 +507,7 @@ int add_route(int argc, char **argv) {
 
 	// DOWNSTREAM REUSEADDR REUSEPORT
     // setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) < 0)
-	sprintf(path, "%s:", down_name);
+	sprintf(path, "%s:", cfg.down_name);
     memset(&sockopt_buf, 0, sizeof(sockopt_buf));
 
     sockopt->level = SOL_SOCKET;
@@ -521,7 +531,7 @@ int add_route(int argc, char **argv) {
 	// Send igmp join to upstream ksocket node
 	memset(iip, 0, sizeof(iip));
 	memset(mip, 0, sizeof(mip));
-	sprintf(path, "%s:", up_name);
+	sprintf(path, "%s:", cfg.up_name);
 	//sprintf(mip, "%s", "192.168.200.10");
 	//get_if_addr(ifname, mip);	
 	sprintf(iip, "%s", up_ip);
@@ -531,8 +541,8 @@ int add_route(int argc, char **argv) {
 
     sockopt->level = IPPROTO_IP;
     sockopt->name = IP_ADD_MEMBERSHIP;
-    ip_mreq.imr_multiaddr.s_addr = inet_addr((const char *) iip);
-    ip_mreq.imr_interface.s_addr = inet_addr((const char *) mip);
+    ip_mreq.imr_multiaddr.s_addr = cfg.src.sin_addr;
+    ip_mreq.imr_interface.s_addr = cfg.srcifip;
     memcpy(sockopt->value, &ip_mreq, sizeof(ip_mreq));
 
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT,
