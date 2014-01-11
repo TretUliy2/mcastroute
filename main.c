@@ -320,7 +320,7 @@ void dot_remove (char *p)
 int add_route(int argc, char **argv) {
 	char path[NG_PATHSIZ], name[NG_PATHSIZ], pth[NG_PATHSIZ];
 	char *ourhook, *peerhook;
-	int one = 1;
+	int one = 1, *ttl;
 	struct ngm_mkpeer mkp;
 	struct ngm_connect con;
 	union
@@ -329,6 +329,8 @@ int add_route(int argc, char **argv) {
 	    struct ng_ksocket_sockopt sockopt;
 	} sockopt_buf;
 	struct ng_ksocket_sockopt * const sockopt = &sockopt_buf.sockopt;
+	struct ng_ksocket_sockopt opt;
+
 	struct ip_mreq ip_mreq;
 	// Args is vlan9 239.125.10.3:1234 239.0.8.3
 	//printf("argc = %d, argv = %s\n", argc, *argv);
@@ -479,12 +481,12 @@ int add_route(int argc, char **argv) {
 		return 0;
 	}
 	// Set ttl of outgoing packets for downstream
-	sockopt->level = IPPROTO_IP;
-	sockopt->name = IP_MULTICAST_TTL;
-	one = 32;
-	memcpy(sockopt->value, &one, sizeof(int));
-	one = 1;
-	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
+	opt.level = IPPROTO_IP;
+	opt.name = IP_MULTICAST_TTL;
+	*ttl = 32;
+	opt.value = ttl;
+
+	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, &opt,
 			sizeof(sockopt_buf)) == -1)
 	{
 		fprintf(stderr, "Sockopt SO_REUSEPORT set failed : %s",
