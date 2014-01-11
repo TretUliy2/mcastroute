@@ -241,7 +241,10 @@ int parse_src(const char *phrase) {
 			srv_count, inet_ntoa(server_cfg[srv_count].src.sin_addr));
 
 	*/
-	cfg.src.sin_port = htons(atoi(phrase));
+	if (phrase == NULL)
+		cfg.src.sin_port = htons(atoi(DEFAULT_PORT));
+	else
+		cfg.src.sin_port = htons(atoi(phrase));
 	cfg.src.sin_len = sizeof(struct sockaddr_in);
 	return(1);
 
@@ -293,8 +296,11 @@ int parse_dst(const char *phrase)
 					__FUNCTION__, p);
 		return(0);
 	}
+	if (phrase == NULL)
+		cfg.dst.sin_port = htons(atoi(DEFAULT_PORT));
+	else
+		cfg.dst.sin_port = htons(atoi(phrase));
 
-	cfg.dst.sin_port = htons(atoi(phrase));
 	cfg.dst.sin_len = sizeof(struct sockaddr_in);
 	return(1);
 }
@@ -454,15 +460,6 @@ int add_route(int argc, char **argv) {
 
 
     sprintf(path, "%s:", cfg.down_name);
-
-    if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_BIND,
-            (struct sockaddr*) &cfg.dstif, sizeof(struct sockaddr)) < 0)
-    {
-        fprintf(stderr, "%s: bind to %s:%d failed : %s\n",
-                __FUNCTION__, inet_ntoa(cfg.dstif.sin_addr),
-               ntohs(cfg.dstif.sin_port), strerror(errno));
-        return 0;
-	}
 	// DOWNSTREAM REUSEADDR REUSEPORT
 	// setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) < 0)
 	memset(&sockopt_buf, 0, sizeof(sockopt_buf));
@@ -487,6 +484,16 @@ int add_route(int argc, char **argv) {
 				strerror(errno));
 		return 0;
 	}
+	// And now bind to socket
+    if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_BIND,
+            (struct sockaddr*) &cfg.dstif, sizeof(struct sockaddr)) < 0)
+    {
+        fprintf(stderr, "%s: bind to %s:%d failed : %s\n",
+                __FUNCTION__, inet_ntoa(cfg.dstif.sin_addr),
+               ntohs(cfg.dstif.sin_port), strerror(errno));
+        return 0;
+	}
+
 	// Set ttl of outgoing packets for downstream
 	opt->level = IPPROTO_IP;
 	opt->name = IP_MULTICAST_TTL;
