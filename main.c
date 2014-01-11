@@ -156,8 +156,6 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 	int fd;
 	struct ifreq ifr;
 
-	printf("%s: iface = %s\n", __FUNCTION__, ifname);
-
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd == -1)
 	{
@@ -170,7 +168,7 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 
 	/* I want IP address attached to "eth0" */
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
-	printf("%s: ioctl starting\n", __FUNCTION__);
+
 
 	if (ioctl(fd, SIOCGIFADDR, &ifr) == -1)
 	{
@@ -180,14 +178,13 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 	}
 
 	close(fd);
-	printf("%s: ioctl done\n", __FUNCTION__);
+
 
 	/* display result */
 	printf("%s: inet_ntoa = %s\n", __FUNCTION__, inet_ntoa(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr));
 	//ip->sin_addr = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
 	ip->sin_addr.s_addr = (((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr).s_addr;
-	printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
-			__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
+
 	return 1;
 }
 
@@ -202,8 +199,6 @@ int parse_src(const char *phrase) {
 	strcpy(string, phrase);
 	strcpy(buf, phrase);
 
-
-	printf("%s:\n", __FUNCTION__);
 	p = strsep((char **) &phrase, "@");
 	if (phrase != NULL )
 	{
@@ -224,8 +219,6 @@ int parse_src(const char *phrase) {
 	{
 		phrase = string;
 	}
-	printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
-			__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 	// parse ip
 	p = strsep((char **)&phrase, ":");
 	//fprintf(stderr, "%s: parsed src_ip = %s line = %s\n", __FUNCTION__, p, buf);
@@ -247,7 +240,6 @@ int parse_src(const char *phrase) {
 	}
 	strcpy(cfg.up_name, p);
 	dot_remove(cfg.up_name);
-	printf("%s: up_name = %s\n", __FUNCTION__, cfg.up_name);
 	/*
 	fprintf(stderr, "%s: server_cfg[%d].src.sin_addr = %s\n", __FUNCTION__,
 			srv_count, inet_ntoa(server_cfg[srv_count].src.sin_addr));
@@ -266,7 +258,6 @@ int parse_dst(const char *phrase)
 
 	char string[82];
 	char buf[82];
-	printf("%s: \n", __FUNCTION__);
 
 	memset(string, 0, sizeof(string));
 	memset(buf, 0, sizeof(buf));
@@ -296,18 +287,12 @@ int parse_dst(const char *phrase)
 	{
 		phrase = string;
 	}
-
-
-	printf("%s: phrase = %s p = %s\n", __FUNCTION__, phrase, p);
 	
 	p = strsep( (char **)&phrase, ":");
-	printf("%s: strsep done phrase = %s p = %s\n", __FUNCTION__, phrase, p);
 	
 	cfg.dst.sin_family = AF_INET;
 	strcpy(cfg.down_name, p);
-	printf("%s: strcpy done down_name = %s\n", __FUNCTION__, cfg.down_name);
 	dot_remove(cfg.down_name);
-	printf("%s: down_name = %s\n", __FUNCTION__, cfg.down_name);
 	if(!inet_aton(p, &cfg.dst.sin_addr))
 	{
 		fprintf(stderr, "%s: fatal error: %s is not a valid ip address\n",
@@ -357,19 +342,14 @@ int add_route(int argc, char **argv) {
 	if (argc != 3) {
 		usage(NULL);
 	}
-	
-	bzero(&cfg, sizeof(cfg));	
 
 	//Read ip port to variables argument processing 
 	int i, j, portflag;
 	j = i = portflag = 0;
 	--argc;
 	parse_dst(argv[argc]);
-	printf("%s: cfg_addr = %p \n", __FUNCTION__, &cfg);
 	--argc;
 	parse_src(argv[argc]);
-	printf("%s: cfg_addr = %p \n", __FUNCTION__, &cfg);
-
 
 	sprintf(name, "mcastroute%d", getpid());
 	
@@ -509,7 +489,17 @@ int add_route(int argc, char **argv) {
 	sprintf(path, "%s:", cfg.down_name);
     memset(&sockopt_buf, 0, sizeof(sockopt_buf));
 
-    sockopt->level = SOL_SOCKET;
+	sockopt->level = SOL_SOCKET;
+	sockopt->name = SO_REUSEADDR;
+	memcpy(sockopt->value, &one, sizeof(int));
+	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
+			sizeof(sockopt_buf)) == -1)
+	{
+		fprintf(stderr, "Sockopt SO_REUSEADDR set failed : %s",
+				strerror(errno));
+		return 0;
+	}
+
     sockopt->name = SO_REUSEPORT;
     memcpy(sockopt->value, &one, sizeof(int));
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
@@ -682,10 +672,9 @@ void usage(const char *cp)
 	}
 	fprintf(stderr, "\
 mcastroute -i vlanXX (add|del) SRC_IP:PORT DST_IP\n\
-Example: mcastroute -i vlan9 add 239.125.10.3:1234 239.0.8.3\n\
-get traffic from vlan9 239.125.10.3:1234 and send it to 239.0.8.3\n\
-\t mcastroute del 239.0.8.3\n\
-interface will be used to send igmp join\n");
+Example: mcastroute  add vlan2007@239.0.3.5:1234 vlan9@239.0.8.3:1122\n\
+get traffic from vlan2007 239.0.3.5:1234 and send it to 239.0.8.3:1122 with source vlan9\n\
+\t mcastroute del 239.0.8.3\n");
  
 	exit(EX_USAGE);
 }
