@@ -91,7 +91,7 @@ struct keytab {
 struct cfg {
 	struct sockaddr_in src;
 	struct sockaddr_in dst;
-	struct in_addr srcifip;
+	struct sockaddr_in srcifip;
 	struct sockaddr_in dstif;
 	char up_name[NG_NODESIZ];
 	char down_name[NG_NODESIZ];
@@ -212,7 +212,7 @@ int parse_src(const char *phrase) {
 		{
 			printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
 				__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
-			if (!get_if_addr(p, (struct sockaddr_in *)&cfg.srcifip))
+			if (!get_if_addr(p, &cfg.srcifip))
 			{
 				fprintf(stderr, "%s: error : %s is not either a valid ip address or interface name\n",
 						__FUNCTION__, p);
@@ -557,7 +557,7 @@ int add_route(int argc, char **argv) {
     sockopt->level = IPPROTO_IP;
     sockopt->name = IP_ADD_MEMBERSHIP;
     ip_mreq.imr_multiaddr.s_addr = cfg.src.sin_addr.s_addr;
-    ip_mreq.imr_interface.s_addr = cfg.srcifip.s_addr;
+    ip_mreq.imr_interface.s_addr = cfg.srcifip.sin_addr.s_addr;
     memcpy(sockopt->value, &ip_mreq, sizeof(ip_mreq));
 
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT,
