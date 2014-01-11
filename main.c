@@ -271,7 +271,8 @@ int parse_dst(const char *phrase)
 				return (0);
 			}
 			cfg.dstif.sin_family = AF_INET;
-			cfg.dstif.sin_port = 0;
+			//cfg.dstif.sin_port = 0;
+			cfg.dstif.sin_port = htons(atoi(DEFAULT_PORT));
 			cfg.dstif.sin_len = sizeof(struct sockaddr_in);
 		}
 	}
