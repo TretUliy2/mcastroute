@@ -320,7 +320,8 @@ void dot_remove (char *p)
 int add_route(int argc, char **argv) {
 	char path[NG_PATHSIZ], name[NG_PATHSIZ], pth[NG_PATHSIZ];
 	char *ourhook, *peerhook;
-	int one = 1, ttl;
+	int one = 1;
+	u_int32_t ttl;
 	struct ngm_mkpeer mkp;
 	struct ngm_connect con;
 
