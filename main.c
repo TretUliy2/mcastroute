@@ -502,6 +502,7 @@ int add_route(int argc, char **argv) {
 	ttl = 32;
 	memcpy(opt->value, &ttl, sizeof(int));
 
+	NgSetDebug(4);
 	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, &opt,
 			sizeof(new_sockopt_buf)) == -1)
 	{
