@@ -102,6 +102,7 @@ int main(int argc, char **argv)
 	extern int csock, dsock;
 	int  one, ch, iflag;
 	char name[NG_PATHSIZ];
+	printf("%s: \n", __FUNCTION__);
 	one = 1;
 	iflag = 0;
 
@@ -131,6 +132,8 @@ int main(int argc, char **argv)
 				strerror(errno));
 		exit(EXIT_FAILURE);
 	}
+	argc--;
+	argv++;
 	if (*argv != NULL)
         switch (keyword(*argv)) {
 		case K_ADD:
@@ -151,6 +154,8 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 {
 	int fd;
 	struct ifreq ifr;
+
+	printf("%s: \n", __FUNCTION__);
 
 	memset(ip, 0, sizeof(struct sockaddr_in));
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -191,10 +196,11 @@ int parse_src(const char *phrase) {
 	strcpy(string, phrase);
 	strcpy(buf, phrase);
 
-
+	printf("%s:\n", __FUNCTION__);
 	p = strsep((char **) &phrase, "@");
 	if (phrase != NULL )
 	{
+		printf("%s: vlan = %s\n", __FUNCTION__, p);
 		if (!inet_aton(p, &cfg.srcifip))
 		{
 			if (!get_if_addr(p, (struct sockaddr_in *)&cfg.srcifip))
@@ -227,6 +233,7 @@ int parse_src(const char *phrase) {
 					__FUNCTION__, p);
 		return(0);
 	}
+	
 
 	/*
 	fprintf(stderr, "%s: server_cfg[%d].src.sin_addr = %s\n", __FUNCTION__,
@@ -246,6 +253,7 @@ int parse_dst(const char *phrase)
 
 	char string[82];
 	char buf[82];
+	printf("%s: \n", __FUNCTION__);
 
 	memset(string, 0, sizeof(string));
 	memset(buf, 0, sizeof(buf));
@@ -303,6 +311,7 @@ int add_route(int argc, char **argv) {
 	struct ip_mreq ip_mreq;
 	// Args is vlan9 239.125.10.3:1234 239.0.8.3
 	//printf("argc = %d, argv = %s\n", argc, *argv);
+	printf("%s: \n", __FUNCTION__);
 	if (argc != 3) {
 		usage(NULL);
 	}
