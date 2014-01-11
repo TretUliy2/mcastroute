@@ -507,7 +507,7 @@ int add_route(int argc, char **argv) {
 	printf("%s() %d: level = %d name = %d value = %02x sizeof(new_sockopt_buf) = %ld\n",
 			__FUNCTION__, __LINE__, opt->level, opt->name,
 			(u_char)opt->value, sizeof(new_sockopt_buf));
-	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, &opt,
+	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, opt,
 			sizeof(new_sockopt_buf)) == -1)
 	{
 		fprintf(stderr, "Sockopt IP_MULTICAST_TTL set failed : %s\n",
