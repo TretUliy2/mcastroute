@@ -465,7 +465,6 @@ int add_route(int argc, char **argv) {
 	// setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) < 0)
 	memset(&sockopt_buf, 0, sizeof(sockopt_buf));
 
-	NgSetDebug(4);
 	sockopt->level = SOL_SOCKET;
 	sockopt->name = SO_REUSEADDR;
 	memcpy(sockopt->value, &one, sizeof(int));
@@ -499,17 +498,17 @@ int add_route(int argc, char **argv) {
 	// Set ttl of outgoing packets for downstream
     memset(&new_sockopt_buf, 0, sizeof(new_sockopt_buf));
 
-    opt->level = IPPROTO_IP;
-	opt->name = IP_MULTICAST_TTL;
+    sockopt->level = IPPROTO_IP;
+	sockopt->name = IP_MULTICAST_TTL;
 	ttl = 32;
-	memcpy(opt->value, &ttl, sizeof(int));
+	memcpy(sockopt->value, &ttl, sizeof(int));
 
 	NgSetDebug(4);
 	printf("%s() %d: level = %d name = %d value = %d sizeof(new_sockopt_buf) = %ld\n",
 			__FUNCTION__, __LINE__, opt->level, opt->name,
-			(int)opt->value, sizeof(new_sockopt_buf));
-	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, &opt,
-			sizeof(new_sockopt_buf)) == -1)
+			(int)opt->value, sizeof(sockopt_buf));
+	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, &sockopt,
+			sizeof(sockopt_buf)) == -1)
 	{
 		fprintf(stderr, "Sockopt IP_MULTICAST_TTL set failed : %s\n",
 				strerror(errno));
