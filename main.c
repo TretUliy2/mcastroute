@@ -201,7 +201,6 @@ int parse_src(const char *phrase) {
 	p = strsep((char **) &phrase, "@");
 	if (phrase != NULL )
 	{
-		printf("%s: vlan = %s\n", __FUNCTION__, p);
 		if (!inet_aton(p, &cfg.srcifip.sin_addr))
 		{
 			if (!get_if_addr(p, &cfg.srcifip))
