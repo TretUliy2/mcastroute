@@ -171,6 +171,7 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 
 	/* I want IP address attached to "eth0" */
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
+	printf("%s: ioctl starting\n", __FUNCTION__);
 
 	if (ioctl(fd, SIOCGIFADDR, &ifr) == -1)
 	{
@@ -180,6 +181,7 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 	}
 
 	close(fd);
+	printf("%s: ioctl done\n", __FUNCTION__);
 
 	/* display result */
 	memcpy(ip, &(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr), sizeof(struct sockaddr_in));
@@ -267,22 +269,30 @@ int parse_dst(const char *phrase)
 	{
 		if (!inet_aton(p, &cfg.dstif.sin_addr))
 		{
-			if (!get_if_addr(p, (struct sockaddr_in *) &cfg.dstif))
+			if (!get_if_addr(p, &cfg.dstif))
 			{
 				fprintf(stderr,
 						"%s: error : %s is not either a valid ip address or interface name\n",
 						__FUNCTION__, p);
 				return (0);
 			}
+			printf("%s: get_if_addr done\n", __FUNCTION__);
 		}
 	}
 	else
 	{
 		phrase = string;
 	}
-	p = strsep((char **)&phrase, ":");
+
+
+	printf("%s: phrase = %s p = %s\n", __FUNCTION__, phrase, p);
+	
+	p = strsep( (char **)&phrase, ":");
+	printf("%s: strsep done phrase = %s p = %s\n", __FUNCTION__, phrase, p);
+	
 	cfg.dst.sin_family = AF_INET;
 	strcpy(cfg.down_name, p);
+	printf("%s: strcpy done down_name = %s\n", __FUNCTION__, cfg.down_name);
 	dot_remove(cfg.down_name);
 	printf("%s: down_name = %s\n", __FUNCTION__, cfg.down_name);
 	if(!inet_aton(p, &cfg.dst.sin_addr))
@@ -309,6 +319,7 @@ void dot_remove (char *p)
 			buf[i] = '-';
 		else
 			buf[i] = p[i];
+		i++;
 	}
 	strcpy(p, buf);
 }
@@ -316,7 +327,6 @@ void dot_remove (char *p)
 // two ksocket nodes connect`s it and send igmp join to one of them 
 int add_route(int argc, char **argv) {
 	char path[NG_PATHSIZ], name[NG_PATHSIZ], pth[NG_PATHSIZ];
-	char down_name[NG_PATHSIZ], up_name[NG_PATHSIZ];
 	char down_ip[IP_LEN], up_ip[IP_LEN];
 	char src_port[PORT_LEN], dst_port[PORT_LEN];
 	char *ourhook, *peerhook;
@@ -342,8 +352,6 @@ int add_route(int argc, char **argv) {
 	memset(dst_port, 0, sizeof(dst_port));
 	memset(down_ip, 0, sizeof(down_ip));
 	memset(up_ip, 0, sizeof(up_ip));
-	memset(down_name, 0, sizeof(down_name));
-	memset(up_name, 0, sizeof(up_name));
 	
 	//Read ip port to variables argument processing 
 	int i, j, portflag;
@@ -366,8 +374,8 @@ int add_route(int argc, char **argv) {
 	
 	//get_if_addr(ifname, mip);	
 	// Shutdown the node to prevent conflicts
-	shut_node(up_name);
-	shut_node(down_name);
+	shut_node(cfg.up_name);
+	shut_node(cfg.down_name);
 	/* Create two ksocket nodes for restream purposes
 	*  make them konnected via via tee
 	*/
