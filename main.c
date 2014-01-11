@@ -495,15 +495,15 @@ int add_route(int argc, char **argv) {
 	}
 
 	// Set ttl of outgoing packets for downstream
-
+    memset(&new_sockopt_buf, 0, sizeof(new_sockopt_buf));
     opt->level = IPPROTO_IP;
 	opt->name = IP_MULTICAST_TTL;
 	ttl = 32;
 	memcpy(opt->value, &ttl, sizeof(int));
 
-	NgSetDebug(4);
+	NgSetDebug(12);
 	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, &opt,
-			sizeof(new_sockopt_buf)) == -1)
+			(sizeof(new_sockopt_buf) + 1)) == -1)
 	{
 		fprintf(stderr, "Sockopt IP_MULTICAST_TTL set failed : %s\n",
 				strerror(errno));
