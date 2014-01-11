@@ -156,7 +156,7 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 	int fd;
 	struct ifreq ifr;
 
-	printf("%s: \n", __FUNCTION__);
+	printf("%s: iface = %s\n", __FUNCTION__, ifname);
 
 	memset(ip, 0, sizeof(struct sockaddr_in));
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -184,7 +184,9 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 	printf("%s: ioctl done\n", __FUNCTION__);
 
 	/* display result */
-	memcpy(ip, &(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr), sizeof(struct sockaddr_in));
+	printf("%s: inet_ntoa = %s\n", __FUNCTION__, inet_ntoa(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr));
+	ip->sin_addr = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
+	//memcpy(ip, &(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr), sizeof(struct sockaddr_in));
 	return 1;
 }
 
@@ -276,7 +278,10 @@ int parse_dst(const char *phrase)
 						__FUNCTION__, p);
 				return (0);
 			}
-			printf("%s: get_if_addr done\n", __FUNCTION__);
+
+			cfg.dstif.sin_port = htons(atoi(DEFAULT_PORT));
+			printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
+					__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 		}
 	}
 	else
@@ -327,13 +332,10 @@ void dot_remove (char *p)
 // two ksocket nodes connect`s it and send igmp join to one of them 
 int add_route(int argc, char **argv) {
 	char path[NG_PATHSIZ], name[NG_PATHSIZ], pth[NG_PATHSIZ];
-	char down_ip[IP_LEN], up_ip[IP_LEN];
-	char src_port[PORT_LEN], dst_port[PORT_LEN];
 	char *ourhook, *peerhook;
 	int one = 1;
 	struct ngm_mkpeer mkp;
 	struct ngm_connect con;
-	struct sockaddr_in addr;
 	union
 	{
 	    u_char buf[sizeof(struct ng_ksocket_sockopt) + sizeof(struct ip_mreq)];
@@ -348,11 +350,8 @@ int add_route(int argc, char **argv) {
 		usage(NULL);
 	}
 	
-	memset(src_port, 0, sizeof(src_port));
-	memset(dst_port, 0, sizeof(dst_port));
-	memset(down_ip, 0, sizeof(down_ip));
-	memset(up_ip, 0, sizeof(up_ip));
-	
+	bzero(&cfg, sizeof(cfg));	
+
 	//Read ip port to variables argument processing 
 	int i, j, portflag;
 	j = i = portflag = 0;
@@ -361,6 +360,8 @@ int add_route(int argc, char **argv) {
 	--argc;
 	parse_src(argv[argc]);
 
+	printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
+			__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 	/*
 	if (strlen(src_port) == 0) {
 		sprintf(src_port, "%s", DEFAULT_PORT);
@@ -460,7 +461,7 @@ int add_route(int argc, char **argv) {
 
 
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_BIND,
-            (struct sockaddr*) &cfg.src, sizeof(addr)) < 0)
+            (struct sockaddr*) &cfg.src, sizeof(struct sockaddr)) < 0)
     {
         //NgAllocRecvMsg(csock, &m, pth);
         fprintf(stderr, "main(): BIND FAILED %s\n",
@@ -471,23 +472,26 @@ int add_route(int argc, char **argv) {
 	// msg downstream: bind inet/192.168.166.10:1234
 	sprintf(path, "%s:", cfg.down_name);
 
-
+	printf("%s: trying to bind to %s:%d\n", __FUNCTION__, 
+			inet_ntoa(cfg.dstif.sin_addr), ntohs(cfg.dstif.sin_port));
+	printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
+			__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_BIND,
-            (struct sockaddr*) &cfg.dstif, sizeof(addr)) < 0)
+            (struct sockaddr*) &cfg.dstif, sizeof(struct sockaddr)) < 0)
     {
         fprintf(stderr, "%s: bind to %s:%d failed : %s\n",
-                __FUNCTION__, inet_ntoa(addr.sin_addr),
-                addr.sin_port, strerror(errno));
+                __FUNCTION__, inet_ntoa(cfg.dstif.sin_addr),
+               ntohs(cfg.dstif.sin_port), strerror(errno));
         return 0;
 	}
 	// msg downstream connect inet/239.0.8.3:1234
 
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_CONNECT,
-            (struct sockaddr*) &cfg.dst, sizeof(addr)) < 0)
+            (struct sockaddr*) &cfg.dst, sizeof(struct sockaddr)) < 0)
     {
         fprintf(stderr, "%s: CONNECT to %s:%d FAILED %s\n",
-                __FUNCTION__, inet_ntoa(addr.sin_addr),
-                addr.sin_port, strerror(errno));
+                __FUNCTION__, inet_ntoa(cfg.dst.sin_addr),
+                cfg.dst.sin_port, strerror(errno));
         return 0;
     }
 
@@ -538,13 +542,7 @@ int add_route(int argc, char **argv) {
         fprintf(stderr, "Sockopt SO_REUSEPORT set failed : %s" ,strerror(errno));
         return 0;
     }
-	// Send igmp join to upstream ksocket node
-	memset(iip, 0, sizeof(iip));
-	memset(mip, 0, sizeof(mip));
 	sprintf(path, "%s:", cfg.up_name);
-	//sprintf(mip, "%s", "192.168.200.10");
-	//get_if_addr(ifname, mip);	
-	sprintf(iip, "%s", up_ip);
 	
     memset(&sockopt_buf, 0, sizeof(sockopt_buf));
     memset(&ip_mreq, 0, sizeof(ip_mreq));
