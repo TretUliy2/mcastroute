@@ -500,7 +500,7 @@ int add_route(int argc, char **argv) {
 
     sockopt->level = IPPROTO_IP;
 	sockopt->name = IP_MULTICAST_TTL;
-	ttl = 0x20;
+	ttl = 24;
 	memcpy(sockopt->value, &ttl, sizeof(u_char));
 
 	NgSetDebug(4);
