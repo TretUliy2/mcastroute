@@ -158,7 +158,6 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 
 	printf("%s: iface = %s\n", __FUNCTION__, ifname);
 
-	memset(ip, 0, sizeof(struct sockaddr_in));
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd == -1)
 	{
@@ -185,8 +184,10 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 
 	/* display result */
 	printf("%s: inet_ntoa = %s\n", __FUNCTION__, inet_ntoa(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr));
-	ip->sin_addr = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
-	//memcpy(ip, &(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr), sizeof(struct sockaddr_in));
+	//ip->sin_addr = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
+	memcpy(&ip->sin_addr, &(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr), sizeof(struct in_addr));
+	printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
+			__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 	return 1;
 }
 
@@ -201,6 +202,7 @@ int parse_src(const char *phrase) {
 	strcpy(string, phrase);
 	strcpy(buf, phrase);
 
+
 	printf("%s:\n", __FUNCTION__);
 	p = strsep((char **) &phrase, "@");
 	if (phrase != NULL )
@@ -208,6 +210,8 @@ int parse_src(const char *phrase) {
 		printf("%s: vlan = %s\n", __FUNCTION__, p);
 		if (!inet_aton(p, &cfg.srcifip))
 		{
+			printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
+				__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 			if (!get_if_addr(p, (struct sockaddr_in *)&cfg.srcifip))
 			{
 				fprintf(stderr, "%s: error : %s is not either a valid ip address or interface name\n",
@@ -220,6 +224,8 @@ int parse_src(const char *phrase) {
 	{
 		phrase = string;
 	}
+	printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
+			__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 	// parse ip
 	p = strsep((char **)&phrase, ":");
 	//fprintf(stderr, "%s: parsed src_ip = %s line = %s\n", __FUNCTION__, p, buf);
@@ -229,6 +235,7 @@ int parse_src(const char *phrase) {
 				__FUNCTION__);
 		return(0);
 	}
+
 
 	cfg.src.sin_family = AF_INET;
 
@@ -362,8 +369,6 @@ int add_route(int argc, char **argv) {
 	--argc;
 	parse_src(argv[argc]);
 	printf("%s: cfg_addr = %p \n", __FUNCTION__, &cfg);
-	printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
-			__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 	/*
 	if (strlen(src_port) == 0) {
 		sprintf(src_port, "%s", DEFAULT_PORT);
