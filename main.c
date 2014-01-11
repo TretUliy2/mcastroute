@@ -74,6 +74,7 @@ void dot_remove(char *p);
 // Global Variables
 char mip[IP_LEN], iip[IP_LEN];
 int csock, dsock, srv_num;
+char name[NG_PATHSIZ];
 char ip[IP_LEN];
 char ifname[IP_LEN];
 uid_t	uid;
@@ -100,9 +101,7 @@ struct cfg {
 // Main Program
 int main(int argc, char **argv)
 {
-	extern int csock, dsock;
 	int  one, ch, iflag;
-	char name[NG_PATHSIZ];
 	one = 1;
 	iflag = 0;
 
@@ -126,12 +125,7 @@ int main(int argc, char **argv)
 	if (uid != 0) {
 		errx(EX_NOPERM, "must be root to alter mcastrouting table");	
 	}
-	if (NgMkSockNode(name, &csock, &dsock) < 0)
-	{
-		fprintf(stderr, "main(): Creation of Ngsocket Failed: %s\n",
-				strerror(errno));
-		exit(EXIT_FAILURE);
-	}
+
 	argc--;
 	argv++;
 	if (*argv != NULL)
@@ -361,7 +355,12 @@ int add_route(int argc, char **argv) {
 	parse_src(argv[argc]);
 
 	sprintf(name, "mcastroute%d", getpid());
-	
+	if (NgMkSockNode(name, &csock, &dsock) < 0)
+	{
+		fprintf(stderr, "main(): Creation of Ngsocket Failed: %s\n",
+				strerror(errno));
+		exit(EXIT_FAILURE);
+	}
 	shut_node(cfg.up_name);
 	shut_node(cfg.down_name);
 	/* Create two ksocket nodes for restream purposes
@@ -571,6 +570,12 @@ int add_route(int argc, char **argv) {
 void del_route(int argc, char **argv) {
 	char name[NG_PATHSIZ];
 	int i, j, portflag;
+	if (NgMkSockNode(name, &csock, &dsock) < 0)
+	{
+		fprintf(stderr, "main(): Creation of Ngsocket Failed: %s\n",
+				strerror(errno));
+		exit(EXIT_FAILURE);
+	}
     j = i = portflag = 0;
 	memset(name, 0, sizeof(name));
     --argc;
