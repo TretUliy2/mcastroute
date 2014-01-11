@@ -103,7 +103,6 @@ int main(int argc, char **argv)
 	extern int csock, dsock;
 	int  one, ch, iflag;
 	char name[NG_PATHSIZ];
-	printf("%s: \n", __FUNCTION__);
 	one = 1;
 	iflag = 0;
 
@@ -181,7 +180,7 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 
 
 	/* display result */
-	printf("%s: inet_ntoa = %s\n", __FUNCTION__, inet_ntoa(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr));
+	//printf("%s: inet_ntoa = %s\n", __FUNCTION__, inet_ntoa(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr));
 	//ip->sin_addr = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
 	ip->sin_addr.s_addr = (((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr).s_addr;
 
@@ -205,8 +204,6 @@ int parse_src(const char *phrase) {
 		printf("%s: vlan = %s\n", __FUNCTION__, p);
 		if (!inet_aton(p, &cfg.srcifip.sin_addr))
 		{
-			printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
-				__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 			if (!get_if_addr(p, &cfg.srcifip))
 			{
 				fprintf(stderr, "%s: error : %s is not either a valid ip address or interface name\n",
@@ -279,8 +276,6 @@ int parse_dst(const char *phrase)
 			cfg.dstif.sin_family = AF_INET;
 			cfg.dstif.sin_port = htons(atoi(DEFAULT_PORT));
 			cfg.dstif.sin_len = sizeof(struct sockaddr_in);
-			printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
-					__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 		}
 	}
 	else
@@ -338,7 +333,6 @@ int add_route(int argc, char **argv) {
 	struct ip_mreq ip_mreq;
 	// Args is vlan9 239.125.10.3:1234 239.0.8.3
 	//printf("argc = %d, argv = %s\n", argc, *argv);
-	printf("%s: \n", __FUNCTION__);
 	if (argc != 3) {
 		usage(NULL);
 	}
