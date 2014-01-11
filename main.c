@@ -61,7 +61,6 @@ SEQ
 void usage(const char *progname);
 void signal_handler(int sig);
 void shut_node(char path[NG_PATHSIZ]);
-void get_if_addr(const char* ifname, char ip[IP_LEN]);
 int keyword(const char *cp);
 int add_route(int argc, char **argv);
 void del_route(int argc, char **argv);
@@ -169,7 +168,7 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 
 	if (ioctl(fd, SIOCGIFADDR, &ifr) == -1)
 	{
-		Log(LOG_ERR, "%s: An error has occured while trying get ip address of interface %s : %s",
+		fprintf(stderr, "%s: An error has occured while trying get ip address of interface %s : %s",
 				__FUNCTION__, ifname, strerror(errno));
 		return 0;
 	}
@@ -256,7 +255,7 @@ int parse_dst(const char *phrase)
 	p = strsep((char **) &phrase, "@");
 	if (phrase != NULL )
 	{
-		if (!inet_aton(p, &cfg.dstif))
+		if (!inet_aton(p, &cfg.dstif.sin_addr))
 		{
 			if (!get_if_addr(p, (struct sockaddr_in *) &cfg.dstif))
 			{
@@ -334,7 +333,7 @@ int add_route(int argc, char **argv) {
 
 	sprintf(name, "mcastroute%d", getpid());
 	
-	get_if_addr(ifname, mip);	
+	//get_if_addr(ifname, mip);	
 	// Shutdown the node to prevent conflicts
 	shut_node(up_name);
 	shut_node(down_name);
@@ -515,7 +514,7 @@ int add_route(int argc, char **argv) {
 	memset(mip, 0, sizeof(mip));
 	sprintf(path, "%s:", up_name);
 	//sprintf(mip, "%s", "192.168.200.10");
-	get_if_addr(ifname, mip);	
+	//get_if_addr(ifname, mip);	
 	sprintf(iip, "%s", up_ip);
 	
     memset(&sockopt_buf, 0, sizeof(sockopt_buf));
