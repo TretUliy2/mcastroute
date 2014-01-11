@@ -501,7 +501,7 @@ int add_route(int argc, char **argv) {
     opt->level = IPPROTO_IP;
 	opt->name = IP_MULTICAST_TTL;
 	ttl = 0x20;
-	opt->value = &ttl;
+	memcpy(opt->value, &ttl, sizeof(u_char));
 
 	NgSetDebug(4);
 	printf("%s() %d: level = %d name = %d value = %02x sizeof(new_sockopt_buf) = %ld\n",
