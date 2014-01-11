@@ -208,7 +208,7 @@ int parse_src(const char *phrase) {
 	if (phrase != NULL )
 	{
 		printf("%s: vlan = %s\n", __FUNCTION__, p);
-		if (!inet_aton(p, &cfg.srcifip))
+		if (!inet_aton(p, &cfg.srcifip.sin_addr))
 		{
 			printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
 				__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
