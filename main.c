@@ -37,6 +37,7 @@
 #define	IP_LEN	17
 #define	PORT_LEN	6
 #define DEFAULT_PORT "1234"
+#define DEFAULT_TTL 32
 
 /*
 What we do in ngctl syntax
@@ -499,7 +500,7 @@ int add_route(int argc, char **argv) {
 
     sockopt->level = IPPROTO_IP;
 	sockopt->name = IP_MULTICAST_TTL;
-	ttl = 24;
+	ttl = DEFAULT_TTL;
 	memcpy(sockopt->value, &ttl, sizeof(u_char));
 
 	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
