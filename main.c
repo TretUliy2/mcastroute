@@ -236,7 +236,7 @@ int parse_src(const char *phrase) {
 	}
 	strcpy(cfg.up_name, p);
 	dot_remove(cfg.up_name);
-
+	printf("%s: up_name = %s\n", __FUNCTION__, cfg.up_name);
 	/*
 	fprintf(stderr, "%s: server_cfg[%d].src.sin_addr = %s\n", __FUNCTION__,
 			srv_count, inet_ntoa(server_cfg[srv_count].src.sin_addr));
@@ -282,14 +282,16 @@ int parse_dst(const char *phrase)
 	}
 	p = strsep((char **)&phrase, ":");
 	cfg.dst.sin_family = AF_INET;
+	strcpy(cfg.down_name, p);
+	dot_remove(cfg.down_name);
+	printf("%s: down_name = %s\n", __FUNCTION__, cfg.down_name);
 	if(!inet_aton(p, &cfg.dst.sin_addr))
 	{
 		fprintf(stderr, "%s: fatal error: %s is not a valid ip address\n",
 					__FUNCTION__, p);
 		return(0);
 	}
-	strcpy(cfg.down_name, p);
-	dot_remove(cfg.down_name);
+
 	cfg.dst.sin_port = htons(atoi(phrase));
 	cfg.dst.sin_len = sizeof(struct sockaddr_in);
 	return(1);
