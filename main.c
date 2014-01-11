@@ -285,7 +285,7 @@ int parse_dst(const char *phrase)
 						__FUNCTION__, p);
 				return (0);
 			}
-
+			cfg.dstif.sin_family = AF_INET;
 			cfg.dstif.sin_port = htons(atoi(DEFAULT_PORT));
 			cfg.dstif.sin_len = sizeof(struct sockaddr_in);
 			printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
@@ -369,19 +369,10 @@ int add_route(int argc, char **argv) {
 	--argc;
 	parse_src(argv[argc]);
 	printf("%s: cfg_addr = %p \n", __FUNCTION__, &cfg);
-	/*
-	if (strlen(src_port) == 0) {
-		sprintf(src_port, "%s", DEFAULT_PORT);
-	}
-	if (strlen(dst_port) == 0) {
-		sprintf(dst_port, "%s", DEFAULT_PORT);
-	}
-	*/
+
 
 	sprintf(name, "mcastroute%d", getpid());
 	
-	//get_if_addr(ifname, mip);	
-	// Shutdown the node to prevent conflicts
 	shut_node(cfg.up_name);
 	shut_node(cfg.down_name);
 	/* Create two ksocket nodes for restream purposes
@@ -479,10 +470,6 @@ int add_route(int argc, char **argv) {
 	// msg downstream: bind inet/192.168.166.10:1234
 	sprintf(path, "%s:", cfg.down_name);
 
-	printf("%s: trying to bind to %s:%d\n", __FUNCTION__, 
-			inet_ntoa(cfg.dstif.sin_addr), ntohs(cfg.dstif.sin_port));
-	printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
-			__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_BIND,
             (struct sockaddr*) &cfg.dstif, sizeof(struct sockaddr)) < 0)
     {
@@ -508,15 +495,6 @@ int add_route(int argc, char **argv) {
     memset(&sockopt_buf, 0, sizeof(sockopt_buf));
 
     sockopt->level = SOL_SOCKET;
-    sockopt->name = SO_REUSEADDR;
-    memcpy(sockopt->value, &one, sizeof(int));
-    if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
-            sizeof(sockopt_buf)) == -1)
-    {
-        fprintf(stderr, "Sockopt set failed : %s\n", strerror(errno));
-        return 0;
-    }
-    // setsockopt(fd,SOL_SOCKET,SO_REUSEPORT,&one,sizeof(int)) < 0)
     sockopt->name = SO_REUSEPORT;
     memcpy(sockopt->value, &one, sizeof(int));
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
@@ -532,15 +510,6 @@ int add_route(int argc, char **argv) {
     memset(&sockopt_buf, 0, sizeof(sockopt_buf));
 
     sockopt->level = SOL_SOCKET;
-    sockopt->name = SO_REUSEADDR;
-    memcpy(sockopt->value, &one, sizeof(int));
-    if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
-            sizeof(sockopt_buf)) == -1)
-    {
-        fprintf(stderr, "Sockopt SO_REUSEADDR set failed : %s\n", strerror(errno));
-        return 0;
-    }
-    // setsockopt(fd,SOL_SOCKET,SO_REUSEPORT,&one,sizeof(int)) < 0)
     sockopt->name = SO_REUSEPORT;
     memcpy(sockopt->value, &one, sizeof(int));
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
