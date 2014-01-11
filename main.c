@@ -478,8 +478,19 @@ int add_route(int argc, char **argv) {
 				strerror(errno));
 		return 0;
 	}
-
-
+	// Set ttl of outgoing packets for downstream
+	sockopt->level = IPPROTO_IP;
+	sockopt->name = IP_MULTICAST_TTL;
+	one = 32;
+	memcpy(sockopt->value, &one, sizeof(int));
+	one = 1;
+	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
+			sizeof(sockopt_buf)) == -1)
+	{
+		fprintf(stderr, "Sockopt SO_REUSEPORT set failed : %s",
+				strerror(errno));
+		return 0;
+	}
     //================================================================================
 	// msg downstream connect inet/239.0.8.3:1234
 
