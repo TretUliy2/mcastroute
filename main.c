@@ -185,7 +185,7 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip)
 	/* display result */
 	printf("%s: inet_ntoa = %s\n", __FUNCTION__, inet_ntoa(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr));
 	//ip->sin_addr = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
-	memcpy(&ip->sin_addr, &(((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr), sizeof(struct in_addr));
+	ip->sin_addr.s_addr = (((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr).s_addr;
 	printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
 			__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 	return 1;
