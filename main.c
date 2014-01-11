@@ -358,10 +358,10 @@ int add_route(int argc, char **argv) {
 	j = i = portflag = 0;
 	--argc;
 	parse_dst(argv[argc]);
-	printf("%s: cfg_addr = %p ", __FUNCTION__, &cfg);
+	printf("%s: cfg_addr = %p \n", __FUNCTION__, &cfg);
 	--argc;
 	parse_src(argv[argc]);
-	printf("%s: cfg_addr = %p ", __FUNCTION__, &cfg);
+	printf("%s: cfg_addr = %p \n", __FUNCTION__, &cfg);
 	printf("%s: cfg.dstif.sin_addr = %s, decimal ip =  %d port = %d\n", 
 			__FUNCTION__, inet_ntoa(cfg.dstif.sin_addr), cfg.dstif.sin_addr, cfg.dstif.sin_port);
 	/*
