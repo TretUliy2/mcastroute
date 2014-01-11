@@ -441,7 +441,8 @@ int add_route(int argc, char **argv) {
     }
 	
 	// msg downstream: bind inet/192.168.166.10:1234
-	sprintf(path, "%s:", cfg.down_name);
+	//=================================================================================
+    sprintf(path, "%s:", cfg.down_name);
 
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_BIND,
             (struct sockaddr*) &cfg.dstif, sizeof(struct sockaddr)) < 0)
@@ -451,6 +452,31 @@ int add_route(int argc, char **argv) {
                ntohs(cfg.dstif.sin_port), strerror(errno));
         return 0;
 	}
+	// DOWNSTREAM REUSEADDR REUSEPORT
+	// setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) < 0)
+	memset(&sockopt_buf, 0, sizeof(sockopt_buf));
+
+	sockopt->level = SOL_SOCKET;
+	sockopt->name = SO_REUSEADDR;
+	memcpy(sockopt->value, &one, sizeof(int));
+	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
+			sizeof(sockopt_buf)) == -1)
+	{
+		fprintf(stderr, "Sockopt SO_REUSEADDR set failed : %s",
+				strerror(errno));
+		return 0;
+	}
+
+	sockopt->name = SO_REUSEPORT;
+	memcpy(sockopt->value, &one, sizeof(int));
+	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
+			sizeof(sockopt_buf)) == -1)
+	{
+		fprintf(stderr, "Sockopt SO_REUSEPORT set failed : %s",
+				strerror(errno));
+		return 0;
+	}
+	//================================================================================
 	// msg downstream connect inet/239.0.8.3:1234
 
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_CONNECT,
@@ -477,30 +503,7 @@ int add_route(int argc, char **argv) {
         return 0;
     }
 
-	// DOWNSTREAM REUSEADDR REUSEPORT
-    // setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) < 0)
-	sprintf(path, "%s:", cfg.down_name);
-    memset(&sockopt_buf, 0, sizeof(sockopt_buf));
 
-	sockopt->level = SOL_SOCKET;
-	sockopt->name = SO_REUSEADDR;
-	memcpy(sockopt->value, &one, sizeof(int));
-	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
-			sizeof(sockopt_buf)) == -1)
-	{
-		fprintf(stderr, "Sockopt SO_REUSEADDR set failed : %s",
-				strerror(errno));
-		return 0;
-	}
-
-    sockopt->name = SO_REUSEPORT;
-    memcpy(sockopt->value, &one, sizeof(int));
-    if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
-            sizeof(sockopt_buf)) == -1)
-    {
-        fprintf(stderr, "Sockopt SO_REUSEPORT set failed : %s" ,strerror(errno));
-        return 0;
-    }
 	sprintf(path, "%s:", cfg.up_name);
 	
     memset(&sockopt_buf, 0, sizeof(sockopt_buf));
