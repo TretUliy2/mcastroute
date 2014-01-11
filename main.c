@@ -442,6 +442,8 @@ int add_route(int argc, char **argv) {
 	
 	// msg downstream: bind inet/192.168.166.10:1234
 	//=================================================================================
+
+    /*
     sprintf(path, "%s:", cfg.down_name);
 
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_BIND,
@@ -476,7 +478,9 @@ int add_route(int argc, char **argv) {
 				strerror(errno));
 		return 0;
 	}
-	//================================================================================
+	*/
+
+    //================================================================================
 	// msg downstream connect inet/239.0.8.3:1234
 
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_CONNECT,
