@@ -464,6 +464,7 @@ int add_route(int argc, char **argv) {
 	// setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) < 0)
 	memset(&sockopt_buf, 0, sizeof(sockopt_buf));
 
+	NgSetDebug(4);
 	sockopt->level = SOL_SOCKET;
 	sockopt->name = SO_REUSEADDR;
 	memcpy(sockopt->value, &one, sizeof(int));
