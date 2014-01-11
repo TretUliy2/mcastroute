@@ -498,17 +498,17 @@ int add_route(int argc, char **argv) {
 	// Set ttl of outgoing packets for downstream
     memset(&new_sockopt_buf, 0, sizeof(new_sockopt_buf));
 
-    opt->level = IPPROTO_IP;
-	opt->name = IP_MULTICAST_TTL;
+    sockopt->level = IPPROTO_IP;
+	sockopt->name = IP_MULTICAST_TTL;
 	ttl = 0x20;
-	memcpy(opt->value, &ttl, sizeof(u_char));
+	memcpy(sockopt->value, &ttl, sizeof(u_char));
 
 	NgSetDebug(4);
 	printf("%s() %d: level = %d name = %d value = %02x sizeof(new_sockopt_buf) = %ld\n",
-			__FUNCTION__, __LINE__, opt->level, opt->name,
-			(u_char)opt->value, sizeof(new_sockopt_buf));
-	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, opt,
-			sizeof(new_sockopt_buf)) == -1)
+			__FUNCTION__, __LINE__, sockopt->level, sockopt->name,
+			(u_char)sockopt->value, sizeof(sockopt_buf));
+	if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT, sockopt,
+			sizeof(sockopt_buf)) == -1)
 	{
 		fprintf(stderr, "Sockopt IP_MULTICAST_TTL set failed : %s\n",
 				strerror(errno));
