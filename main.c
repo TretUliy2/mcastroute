@@ -541,8 +541,8 @@ int add_route(int argc, char **argv) {
 
     sockopt->level = IPPROTO_IP;
     sockopt->name = IP_ADD_MEMBERSHIP;
-    ip_mreq.imr_multiaddr.s_addr = cfg.src.sin_addr;
-    ip_mreq.imr_interface.s_addr = cfg.srcifip;
+    ip_mreq.imr_multiaddr.s_addr = cfg.src.sin_addr.s_addr;
+    ip_mreq.imr_interface.s_addr = cfg.srcifip.s_addr;
     memcpy(sockopt->value, &ip_mreq, sizeof(ip_mreq));
 
     if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT,
