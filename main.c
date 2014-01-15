@@ -69,6 +69,7 @@ int parse_src(const char *phrase);
 int parse_dst(const char *phrase);
 int get_if_addr(const char *ifname, struct sockaddr_in *ip);
 void dot_remove(char *p);
+void show_routes(void);
 
 // External Functions
 
@@ -87,7 +88,10 @@ struct keytab {
     {"add", K_ADD},
 #define K_DEL   6
     {"del", K_DEL},
+#define	K_SHOW	7
+    {"show", K_SHOW},
     {0, 0}
+
 };
 // struct configuration
 struct cfg {
@@ -136,6 +140,9 @@ int main(int argc, char **argv)
 			break;
 		case K_DEL:
 			del_route(argc, argv);
+			break;
+		case K_SHOW:
+			show_routes();
 			break;
 		default:
 			usage(*argv);
@@ -360,8 +367,8 @@ int add_route(int argc, char **argv) {
 	sprintf(name, "mcastroute%d", getpid());
 	if (NgMkSockNode(name, &csock, &dsock) < 0)
 	{
-		fprintf(stderr, "main(): Creation of Ngsocket Failed: %s\n",
-				strerror(errno));
+		fprintf(stderr, "%s(): Creation of Ngsocket Failed: %s\n",
+				__FUNCTION__, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	shut_node(cfg.up_name);
@@ -575,8 +582,8 @@ void del_route(int argc, char **argv) {
 	int i, j, portflag;
 	if (NgMkSockNode(name, &csock, &dsock) < 0)
 	{
-		fprintf(stderr, "main(): Creation of Ngsocket Failed: %s\n",
-				strerror(errno));
+		fprintf(stderr, "%s(): Creation of Ngsocket Failed: %s\n",
+				__FUNCTION__, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
     j = i = portflag = 0;
@@ -607,7 +614,17 @@ keyword(const char *cp)
         kt++;
     return (kt->kt_i);
 }
+void show_routes(void)
+{
+	if (NgMkSockNode(name, &csock, &dsock) < 0)
+	{
+		fprintf(stderr, "%s: Creation of Ngsocket Failed: %s\n",
+				__FUNCTION__, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
 
+
+}
 // Group membership report send
 int add_mgroup(int srv_num)
 {
@@ -663,12 +680,12 @@ void signal_handler(int sig)
 	switch (sig)
 	{
 	case SIGTERM:
-		fprintf(stderr, "signal_handler(): Caught SIGTERM shutting down\n");
+		fprintf(stderr, "%s(): Caught SIGTERM shutting down\n", __FUNCTION__);
 		exit(1);
 		break;
 	default:
-		fprintf(stderr, "signal_handler(): %s signal catched closing all\n",
-				strsignal(sig));
+		fprintf(stderr, "%s(): %s signal catched closing all\n",
+				__FUNCTION__, strsignal(sig));
 		exit(1);
 		break;
 	}
