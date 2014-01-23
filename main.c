@@ -702,7 +702,7 @@ void show_routes(void)
 			llist = (struct hooklist *) resp1->data;
 			linfo = &llist->nodeinfo;
 			
-			strcpy(strCopy, llist->link[0].nodeinfo.name);
+			strcpy(strCopy, ninfo->name);
 			strCopy[pmatch[1].rm_eo] = 0;
 			printf("%s -> %s \n", ret_dot(strCopy),
 					ret_dot(llist->link[0].nodeinfo.name), pmatch[1].rm_so, pmatch[1].rm_eo);
