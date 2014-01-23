@@ -637,7 +637,7 @@ void show_routes(void)
 	char name[NG_PATHSIZ];
 	bzero(path, sizeof(path));
 	preg = (regex_t *) malloc(sizeof(regex_t));
-	string = "[0-9]{1,3}(-[0-9]{1,3}){3}";
+	string = "[0-9]{1,3}(-[0-9]{1,3}){3}-up";
 
 	int status = regcomp(preg, string, REG_EXTENDED);
 	if (status != 0)
