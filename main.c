@@ -704,7 +704,7 @@ void show_routes(void)
 			
 			strcpy(strCopy, llist->link[0].nodeinfo.name);
 			strCopy[pmatch[1].rm_eo] = 0;
-			printf("%s -> %s [:%2u %2u:]\n", ret_dot(strCopy),
+			printf("%s -> %s \n", ret_dot(strCopy),
 					ret_dot(llist->link[0].nodeinfo.name), pmatch[1].rm_so, pmatch[1].rm_eo);
 			free(resp1);
 		}
