@@ -72,6 +72,7 @@ int parse_dst(const char *phrase);
 int get_if_addr(const char *ifname, struct sockaddr_in *ip);
 void dot_remove(char *p);
 void show_routes(void);
+char *ret_dot(char *str);
 
 // External Functions
 
