@@ -810,3 +810,15 @@ get traffic from vlan2007 239.0.3.5:1234 and send it to 239.0.8.3:1122 with sour
  
 	exit(EX_USAGE);
 }
+
+char *ret_dot(char *str)
+{
+	int i;
+	for (i = 0; i < strlen(str); i++)
+	{
+		if (str[i] == '-')
+			str[i] = '.';
+	}
+	return str;
+}
+
