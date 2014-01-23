@@ -627,6 +627,7 @@ void show_routes(void)
 	struct nodeinfo *ninfo, *linfo;
 	char *string, path[NG_PATHSIZ];
 	regex_t *preg;
+	regmatch_t pmatch[2];
 
 	/*
 	 int regcomp(regex_t *preg, const char *regex, int cflags);
@@ -637,7 +638,7 @@ void show_routes(void)
 	char name[NG_PATHSIZ];
 	bzero(path, sizeof(path));
 	preg = (regex_t *) malloc(sizeof(regex_t));
-	string = "[0-9]{1,3}(-[0-9]{1,3}){3}-up";
+	string = "([0-9]{1,3}(-[0-9]{1,3}){3})-up";
 
 	int status = regcomp(preg, string, REG_EXTENDED);
 	if (status != 0)
@@ -678,7 +679,7 @@ void show_routes(void)
 
 	while (nlist->numnames > 0)
 	{
-		if (regexec(preg, ninfo->name, 0, NULL, 0) == 0)
+		if (regexec(preg, ninfo->name, 2, pmatch, 0) == 0)
 		{
 			sprintf(path, "[%08x]:", ninfo->id);
 			if (NgSendMsg(csock, path, NGM_GENERIC_COOKIE, NGM_LISTHOOKS, NULL,
@@ -692,6 +693,7 @@ void show_routes(void)
 				printf("%s(): error %s\n", __FUNCTION__, strerror(errno));
 				exit(EXIT_FAILURE);
 			}
+
 			llist = (struct hooklist *) resp1->data;
 			linfo = &llist->nodeinfo;
 			printf("%s -> %s\n", ret_dot(ninfo->name),
