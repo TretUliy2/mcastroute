@@ -241,6 +241,7 @@ int parse_src(const char *phrase) {
 	}
 	strcpy(cfg.up_name, p);
 	dot_remove(cfg.up_name);
+	sprintf(cfg.up_name, "%s-up", cfg.up_name);
 	/*
 	fprintf(stderr, "%s: server_cfg[%d].src.sin_addr = %s\n", __FUNCTION__,
 			srv_count, inet_ntoa(server_cfg[srv_count].src.sin_addr));
