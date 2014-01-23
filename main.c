@@ -33,11 +33,13 @@
 #include 	<sys/ioctl.h>
 #include	<sysexits.h>
 #include	<net/if.h>
+#include <regex.h>
 
 #define	IP_LEN	17
 #define	PORT_LEN	6
 #define DEFAULT_PORT "1234"
 #define DEFAULT_TTL 32
+#define	MAX_ERROR_MSG 512
 
 /*
 What we do in ngctl syntax
@@ -614,15 +616,90 @@ keyword(const char *cp)
         kt++;
     return (kt->kt_i);
 }
+// Print active routes
 void show_routes(void)
 {
-	if (NgMkSockNode(name, &csock, &dsock) < 0)
+	struct ng_mesg *resp, *resp1;
+	struct namelist *nlist;
+	struct hooklist *llist;
+	struct nodeinfo *ninfo, *linfo;
+	char *string, path[NG_PATHSIZ];
+	regex_t *preg;
+
+	/*
+	 int regcomp(regex_t *preg, const char *regex, int cflags);
+	 int regexec(const regex_t *preg, const char *string, size_t nmatch,
+	 regmatch_t pmatch[], int eflags);
+
+	 */
+	char name[NG_PATHSIZ];
+	bzero(path, sizeof(path));
+	preg = (regex_t *) malloc(sizeof(regex_t));
+	string = "[0-9]{1,3}(-[0-9]{1,3}){3}";
+
+	int status = regcomp(preg, string, REG_EXTENDED);
+	if (status != 0)
 	{
-		fprintf(stderr, "%s: Creation of Ngsocket Failed: %s\n",
-				__FUNCTION__, strerror(errno));
+		char error_message[MAX_ERROR_MSG];
+		regerror(status, preg, error_message, MAX_ERROR_MSG);
+		printf("Regex error compiling '%s': %s\n", string, error_message);
 		exit(EXIT_FAILURE);
 	}
 
+	bzero(name, sizeof(name));
+	sprintf(name, "listsock-%d", getpid());
+
+	if (NgMkSockNode(name, &csock, &dsock) < 0)
+	{
+		fprintf(stderr, "%s: Creation of Ngsocket Failed: %s\n", __FUNCTION__,
+				strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	if (NgSendMsg(csock, ".", NGM_GENERIC_COOKIE, NGM_LISTNODES, NULL, 0) < 0)
+	{
+		printf("%s : send msg failed: %s\n", __FUNCTION__, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	if (NgAllocRecvMsg(csock, &resp, NULL) < 0)
+	{
+		printf("%s : Failed to receive response: %s\n", __FUNCTION__,
+				strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	/* Show each node */
+
+	nlist = (struct namelist *) resp->data;
+	//printf("There are %d total %snodes:\n",
+	//    nlist->numnames, "");
+	ninfo = nlist->nodeinfo;
+
+	while (nlist->numnames > 0)
+	{
+		if (regexec(preg, ninfo->name, 0, NULL, 0) == 0)
+		{
+			sprintf(path, "[%08x]:", ninfo->id);
+			if (NgSendMsg(csock, path, NGM_GENERIC_COOKIE, NGM_LISTHOOKS, NULL,
+					0) < 0)
+			{
+				printf("%s(): error %s\n", __FUNCTION__, strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+			if (NgAllocRecvMsg(csock, &resp1, NULL) < 0)
+			{
+				printf("%s(): error %s\n", __FUNCTION__, strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+			llist = (struct hooklist *) resp1->data;
+			linfo = &llist->nodeinfo;
+			printf("%s -> %s\n", ret_dot(ninfo->name),
+					ret_dot(llist->link[0].nodeinfo.name));
+			free(resp1);
+		}
+		nlist->numnames--;
+		ninfo++;
+	}
+	free(resp);
 
 }
 // Group membership report send
