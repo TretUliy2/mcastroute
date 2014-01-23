@@ -626,6 +626,7 @@ void show_routes(void)
 	struct hooklist *llist;
 	struct nodeinfo *ninfo, *linfo;
 	char *string, path[NG_PATHSIZ];
+	int i;
 	regex_t *preg;
 	regmatch_t pmatch[2];
 
@@ -636,7 +637,8 @@ void show_routes(void)
 
 	 */
 	char name[NG_PATHSIZ];
-	char strcopy[32];
+	char strCopy[32], strCopy2[32];
+	char result[32];
 	bzero(path, sizeof(path));
 	preg = (regex_t *) malloc(sizeof(regex_t));
 	string = "([0-9]{1,3}(-[0-9]{1,3}){3})-up";
@@ -651,6 +653,8 @@ void show_routes(void)
 	}
 
 	bzero(name, sizeof(name));
+	bzero(strCopy, sizeof(strCopy));
+	bzero(strCopy2, sizeof(strCopy2));
 	sprintf(name, "listsock-%d", getpid());
 
 	if (NgMkSockNode(name, &csock, &dsock) < 0)
@@ -697,10 +701,11 @@ void show_routes(void)
 
 			llist = (struct hooklist *) resp1->data;
 			linfo = &llist->nodeinfo;
-			strcpy(strcopy, llist->link[0].nodeinfo.name);
-			strcopy[pmatch[1].rm_eo] = '\0';
-			printf("%s -> %s %d\n", ret_dot(ninfo->name),
-					ret_dot(strcopy), pmatch[1].rm_eo);
+			
+			strcpy(strCopy, llist->link[0].nodeinfo.name);
+			strCopy[pmatch[1].rm_eo] = 0;
+			printf("%s -> %s [:%2u %2u:]\n", ret_dot(strCopy),
+					ret_dot(llist->link[0].nodeinfo.name), pmatch[1].rm_so, pmatch[1].rm_eo);
 			free(resp1);
 		}
 		nlist->numnames--;
@@ -828,4 +833,3 @@ char *ret_dot(char *str)
 	}
 	return str;
 }
-
