@@ -603,7 +603,7 @@ void del_route(int argc, char **argv) {
         }
         i++;
     }
-	//sprintf(name, "%s:", name);
+	sprintf(name, "%s-up:", name);
 	shut_node(name);
 	exit(EXIT_SUCCESS);
 }
@@ -636,6 +636,7 @@ void show_routes(void)
 
 	 */
 	char name[NG_PATHSIZ];
+	char strcopy[32];
 	bzero(path, sizeof(path));
 	preg = (regex_t *) malloc(sizeof(regex_t));
 	string = "([0-9]{1,3}(-[0-9]{1,3}){3})-up";
@@ -696,8 +697,10 @@ void show_routes(void)
 
 			llist = (struct hooklist *) resp1->data;
 			linfo = &llist->nodeinfo;
+			strcpy(strcopy, llist->link[0].nodeinfo.name);
+			strcopy[pmatch[1].rm_eo] = 0;
 			printf("%s -> %s\n", ret_dot(ninfo->name),
-					ret_dot(llist->link[0].nodeinfo.name));
+					ret_dot(strcopy));
 			free(resp1);
 		}
 		nlist->numnames--;
