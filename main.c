@@ -621,12 +621,12 @@ keyword(const char *cp)
 // Print active routes
 void show_routes(void)
 {
-	struct ng_mesg *resp, *resp1;
+	struct ng_mesg *resp, *resp1, *resp2;
 	struct namelist *nlist;
 	struct hooklist *llist;
 	struct nodeinfo *ninfo, *linfo;
-	char *string, path[NG_PATHSIZ];
-	int i;
+	char *string, path[NG_PATHSIZ], *p;
+	struct sockaddr_in *ips;	
 	regex_t *preg;
 	regmatch_t pmatch[2];
 
@@ -637,7 +637,7 @@ void show_routes(void)
 
 	 */
 	char name[NG_PATHSIZ];
-	char strCopy[32], strCopy2[32];
+	char src[32], dst[32];
 	char result[32];
 	bzero(path, sizeof(path));
 	preg = (regex_t *) malloc(sizeof(regex_t));
@@ -653,8 +653,8 @@ void show_routes(void)
 	}
 
 	bzero(name, sizeof(name));
-	bzero(strCopy, sizeof(strCopy));
-	bzero(strCopy2, sizeof(strCopy2));
+	bzero(src, sizeof(src));
+	bzero(dst, sizeof(dst));
 	sprintf(name, "listsock-%d", getpid());
 
 	if (NgMkSockNode(name, &csock, &dsock) < 0)
@@ -695,18 +695,50 @@ void show_routes(void)
 			}
 			if (NgAllocRecvMsg(csock, &resp1, NULL) < 0)
 			{
-				printf("%s(): error %s\n", __FUNCTION__, strerror(errno));
+				printf("%s(): line: %d %s\n", __FUNCTION__, __LINE__, strerror(errno));
 				exit(EXIT_FAILURE);
 			}
-
+				
+			if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE,
+                NGM_KSOCKET_GETNAME, NULL, 0) < 0)
+			{
+				printf("%s(): line: %d %s\n", __FUNCTION__, __LINE__, strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+			if (NgAllocRecvMsg(csock, &resp2, NULL) < 0) {
+				printf("%s(): line: %d %s\n", __FUNCTION__, __LINE__, strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+			ips = (struct sockaddr_in *) resp2->data;
+			 
 			llist = (struct hooklist *) resp1->data;
 			linfo = &llist->nodeinfo;
 			
-			strcpy(strCopy, ninfo->name);
-			strCopy[pmatch[1].rm_eo] = 0;
-			printf("%s -> %s \n", ret_dot(strCopy),
-					ret_dot(llist->link[0].nodeinfo.name), pmatch[1].rm_so, pmatch[1].rm_eo);
+			strcpy(src, inet_ntoa(ips->sin_addr));
+			p = src + strlen(src);
+			sprintf(p, ":%d", ntohs(ips->sin_port)); 
+			free(resp2);			
+			
+			sprintf(path, "%s:", llist->link[0].nodeinfo.name);
+			if (NgSendMsg(csock, path, NGM_KSOCKET_COOKIE,
+                NGM_KSOCKET_GETPEERNAME, NULL, 0) < 0)
+            {
+                printf("%s(): line: %d %s\n", __FUNCTION__, __LINE__, strerror(errno));
+                exit(EXIT_FAILURE);
+            }
+            if (NgAllocRecvMsg(csock, &resp2, NULL) < 0) {
+                printf("%s(): line: %d %s\n", __FUNCTION__, __LINE__, strerror(errno));
+                exit(EXIT_FAILURE);
+            }
+
+			ips = (struct sockaddr_in *) resp2->data;
+			strcpy(dst, inet_ntoa(ips->sin_addr));
+			p = dst + strlen(dst);
+			sprintf(p, ":%d", ntohs(ips->sin_port)); 
+			
+			printf("%s -> %s\n", src, dst);	
 			free(resp1);
+			free(resp2);
 		}
 		nlist->numnames--;
 		ninfo++;
