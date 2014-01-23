@@ -628,7 +628,6 @@ void show_routes(void)
 	char *string, path[NG_PATHSIZ], *p;
 	struct sockaddr_in *ips;	
 	regex_t *preg;
-	regmatch_t pmatch[2];
 
 	/*
 	 int regcomp(regex_t *preg, const char *regex, int cflags);
@@ -684,7 +683,7 @@ void show_routes(void)
 
 	while (nlist->numnames > 0)
 	{
-		if (regexec(preg, ninfo->name, 2, pmatch, 0) == 0)
+		if (regexec(preg, ninfo->name, 0, NULL, 0) == 0)
 		{
 			sprintf(path, "[%08x]:", ninfo->id);
 			if (NgSendMsg(csock, path, NGM_GENERIC_COOKIE, NGM_LISTHOOKS, NULL,
