@@ -1,0 +1,5 @@
+*.o
+.cproject
+.settings
+.main*
+mcastroute

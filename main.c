@@ -73,7 +73,7 @@ int get_if_addr(const char *ifname, struct sockaddr_in *ip);
 void dot_remove(char *p);
 void show_routes(void);
 char *ret_dot(char *str);
-void set_tos(int srv_csock, char path[NG_PATHSIZ]);
+int set_tos(int srv_csock, char path[NG_PATHSIZ]);
 
 // External Functions
 
@@ -305,7 +305,7 @@ void dot_remove(char *p) {
 	strcpy(p, buf);
 }
 
-void int set_tos (int srv_csock, char path[NG_PATHSIZ]) {
+int set_tos (int srv_csock, char path[NG_PATHSIZ]) {
 	int tos;
 	union {
 		u_char buf[sizeof(struct ng_ksocket_sockopt) + sizeof(int)];
@@ -323,7 +323,7 @@ void int set_tos (int srv_csock, char path[NG_PATHSIZ]) {
 	memcpy(sockopt->value, &tos, sizeof(tos));
 	if (NgSendMsg(srv_csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_SETOPT,
 			sockopt, sizeof(sockopt_buf) ) == -1) {
-		Log(LOG_ERR, "%s(): Sockopt set failed : %s", __FUNCTION__,
+		fprintf(stderr, "%s(): Sockopt set failed : %s", __FUNCTION__,
 				strerror(errno));
 		return 0;
 	} else  {
@@ -334,22 +334,22 @@ void int set_tos (int srv_csock, char path[NG_PATHSIZ]) {
 		NgSetDebug(8);
 		if (NgSendMsg(srv_csock, path, NGM_KSOCKET_COOKIE, NGM_KSOCKET_GETOPT,
         		sockopt_resp, sizeof(*sockopt_resp)) == -1) {
-        	Log(LOG_ERR, "%s() can`t get sockopt from address :%s because : %s", __FUNCTION__,
+        	fprintf(stderr, "%s() can`t get sockopt from address :%s because : %s", __FUNCTION__,
         			path, strerror(errno));
         	NgSetDebug(0);
         	return 0;
         }
 
 		if (NgAllocRecvMsg(srv_csock, &m, NULL) < 0) {
-			Log(LOG_ERR, "%s() Error receiving response", __FUNCTION__);
+			fprintf(stderr,  "%s() Error receiving response", __FUNCTION__);
 		} else {
-			Log(LOG_NOTICE, "%s() message received dscp = %08x",
+			fprintf(stderr, "%s() message received dscp = %08x",
 					__FUNCTION__, ((struct ng_ksocket_sockopt *)m->data)->value );
 			NgSetDebug(0);
 			free(m);
 		}
 
-		Log(LOG_NOTICE, "%s(): sockopt_resp.value = 0x%08x must be = 0x%08x",
+		fprintf(stderr, "%s(): sockopt_resp.value = 0x%08x must be = 0x%08x",
 				__FUNCTION__, sockopt_resp->value, IPTOS_DSCP_CS4);
 
         //sockopt_resp = (struct ng_ksocket_sockopt *)m->data;
@@ -357,7 +357,7 @@ void int set_tos (int srv_csock, char path[NG_PATHSIZ]) {
         //		, __FUNCTION__,
 		//		m->header.token, sockopt_resp->value);
 
-		Log(LOG_INFO, "%s() tos = %d set for socket success", __FUNCTION__, tos);
+		fprintf(stderr, "%s() tos = %d set for socket success", __FUNCTION__, tos);
         return 1;
     }
 	return 1;
